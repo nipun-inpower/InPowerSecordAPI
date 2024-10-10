@@ -197,7 +197,7 @@ const login = async (req, res) => {
     return res
       .cookie("token", token, { httpOnly: true })
       .status(200)
-      .send({ msg: "Successful login.", token: token, statusCode: 200 });
+      .send({ msg: "Successful login.", token: token, statusCode: 200, isVerified: user.verified, groups: user.groups });
   } catch (error) {
     console.error(error);
     res.status(500).send({ msg: "Internal server error." });

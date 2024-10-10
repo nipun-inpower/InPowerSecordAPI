@@ -17,7 +17,7 @@ const get = async (req, res) => {
       _id: new ObjectId(userid),
     });
 
-    if (userType !== constants.ADMIN && blockedBy.includes(id)) {
+    if (userType !== (constants.USER || constants.ADMIN || constants.MODERATOR) && blockedBy.includes(id)) {
       return res
         .status(400)
         .send({ msg: "You do not have permission to view this profile" });
@@ -152,7 +152,7 @@ const follow = async (req, res) => {
       return res.status(400).send({ msg: "User is already following user" });
     }
 
-    if (userType !== constants.ADMIN && blockedBy.includes(id)) {
+    if (userType !== (constants.USER || constants.ADMIN || constants.MODERATOR) && blockedBy.includes(id)) {
       return res
         .status(400)
         .send({ msg: "You do not have permission to follow this user" });

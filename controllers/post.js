@@ -11,6 +11,7 @@ const commentService = require("../services/getComments.js");
 const { ObjectId } = require("mongodb");
 const { uploadFiles } = require("../services/s3bucket.js");
 const constants = require("../constants.js");
+const { is } = require("express/lib/request.js");
 
 // Get all posts from a group that the user is in
 const get = async (req, res) => {
@@ -28,7 +29,7 @@ const get = async (req, res) => {
     });
 
     // If the above doesnt include the groupid from the request params, then the user doesn't have access to the group because they haven't joined it
-    if (!groups.includes(groupid)) {
+    if (!groups.includes(groupid.toString())) { 
       return res
         .status(403)
         .send({ msg: "User does not have access to this group" });
@@ -40,7 +41,9 @@ const get = async (req, res) => {
       blockedBy.includes(post.author.id)
     );
 
-    if (userType !== constants.ADMIN && blockedByAuthor) {
+    console.log("constants.ADMIN: ", constants.USER);
+
+    if (userType !== constants.USER && blockedByAuthor) {
       return res
         .status(403)
         .send({ msg: "You do not have permission to view this post." });
@@ -57,13 +60,13 @@ const get = async (req, res) => {
       post.comments.filter((comment) => blockedBy.includes(comment.author.id));
     });
 
-    if (userType !== constants.ADMIN && blockedByCommentor) {
+    if (userType !== constants.USER && blockedByCommentor) {
       return res
         .status(403)
         .send({ msg: "You do not have permission to view this comment." });
     }
 
-    res.status(200).send({ posts: postWithComments });
+    res.status(200).send( postWithComments );
   } catch (error) {
     console.error(error);
     res.status(500).send({ msg: "Internal server error." });
@@ -77,7 +80,15 @@ const create = async (req, res) => {
     const { title, content, groupids, isAnonymous, warning } = req.body;
     const files = req.files;
 
-    if (groupids.length === 0) {
+    var newGroupIds;
+
+    if (Array.isArray(groupids)) {
+      newGroupIds = groupids;
+    } else {
+      newGroupIds = [groupids];
+    }
+
+    if (newGroupIds.length === 0) {
       return res.status(400).send({ msg: "At least 1 group ID is required" });
     }
 
@@ -99,13 +110,29 @@ const create = async (req, res) => {
     if (
       !(
         groups.length > 0 &&
-        groups.length >= groupids.length &&
-        groupids.every((groupid) => groups.includes(groupid))
+        groups.length >= newGroupIds.length 
+        &&
+        newGroupIds.every((groupid) => groups.includes(groupid))
       )
     ) {
       return res
         .status(403)
         .send({ msg: "User must be in all selected group to create a post" });
+    }
+
+    var anonymous;  
+    var isWarning;
+
+    if (isAnonymous === "true"){
+      anonymous = true;
+    } else {
+      anonymous = false;
+    }
+
+    if (warning === "true"){  
+      isWarning = true;
+    } else {
+      isWarning = false;
     }
 
     // For allowing users to make anonymous posts if they so choose
@@ -131,13 +158,13 @@ const create = async (req, res) => {
         };
 
     const { postid } = await postdb.create({
-      belongsTo: groupids,
+      belongsTo: newGroupIds,
       author,
       title: title || "",
       content: content || "",
       images,
-      isAnonymous,
-      warning,
+      isAnonymous: anonymous,
+      warning: isWarning,
       createdAt: Date.now(),
       reactions: {
         like: [],
