@@ -201,9 +201,9 @@ const edit = async (req, res) => {
   try {
     const { userid } = req.user;
     const { id } = req.params;
-    const { message } = req.body;
+    const { content } = req.body;
 
-    if (!(id && message)) {
+    if (!(id && content)) {
       return res
         .status(400)
         .send({ msg: "Post/comment id & new message is required" });
@@ -230,9 +230,9 @@ const edit = async (req, res) => {
 
     // If the content to be edited is a post, update the post. Otherwise, it's a comment, so update the comment
     if (isPost) {
-      await postdb.update(new ObjectId(id), message);
+      await postdb.update(new ObjectId(id), content);
     } else {
-      await commentdb.update(new ObjectId(id), message);
+      await commentdb.update(new ObjectId(id), content);
     }
 
     return res.status(200).send({ msg: "Successfully updated message" });

@@ -36,7 +36,7 @@ const get = async (req, res) => {
     // Get all posts by the user being viewed and filter out the ones that the viewer can't see (Based on groups joined)
     const userPosts = await postdb.getAll({
       "author.id": id,
-      isAnonymous: false.toString(),
+      isAnonymous: false,
     });
 
     const posts = userPosts.filter(
@@ -53,7 +53,7 @@ const get = async (req, res) => {
         const followerProfile = await userdb.search({
           _id: new ObjectId(follower),
         });
-        return `${followerProfile.firstname} ${followerProfile.lastname}`;
+        return `${followerProfile._id}`;
       })
     );
 
